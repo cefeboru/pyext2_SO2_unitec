@@ -19,7 +19,7 @@ class FileSystem(object):
         self.datablock_bitmap_size = self.datablock_max_elements / 8
         self.datablock_bitmap_offset = 0
         self.datablock_region_size = self.datablock_size * self.datablock_max_elements
-        self.inode_size = 54
+        self.inode_size = Inode.i_struct_size
         self.inode_max_elements = 1024
         self.inode_bitmap_size = self.inode_max_elements / 8
         self.inode_bitmap_offset = self.datablock_bitmap_size - 1

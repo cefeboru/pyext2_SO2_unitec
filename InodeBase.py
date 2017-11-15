@@ -11,6 +11,7 @@ class Inode(object):
     Mode, File Size, Created Date, Accesed Date, Deleted Date
     '''
     _i_struct = 'iillllhhhhhhhhhhhhhhh'
+    i_struct_size = struct.calcsize(_i_struct)
 
     def __init__(self):
         self.i_mode = -1
