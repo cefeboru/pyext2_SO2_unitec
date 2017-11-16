@@ -1,4 +1,5 @@
 "Base Inode Structure"
+import binascii
 import calendar
 import time
 import struct
@@ -43,9 +44,8 @@ class Inode(object):
                            self.i_blocks[9], self.i_blocks[10], self.i_blocks[11], self.i_blocks[12],
                            self.i_blocks[13], self.i_blocks[14])
 
-    def from_binary(self, file_object):
+    def from_binary(self, binary_inode):
         "Load struct data from buffer and returns the Inode"
-        binary_inode = file_object.read(struct.calcsize(self._i_struct))
         unpacked_data = struct.unpack(self._i_struct, binary_inode)
         self.i_mode = unpacked_data[0]
         self.i_size = unpacked_data[1]
