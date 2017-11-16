@@ -1,7 +1,7 @@
 "Module to handle all the Inode Table Operations"
-
-from InodeBase import Inode
 import struct
+from InodeBase import Inode
+from Settings import Settings
 
 class InodeTable(object):
     "Inode Table API to perform Read & Write Operations"
@@ -28,8 +28,16 @@ class InodeTable(object):
         return inode
 
     @classmethod
+    def get_first_free_inode(cls, file_object):
+        '''
+        Reads and return the first inode element that us unused
+        '''
+        bitmap_bytes = file_object.read(Settings.inode_bitmap_size)
+
+    @classmethod
     def set_offset(cls, offset):
         '''
         Sets the table offset in bytes in the filesystem object
         '''
         cls._offset = offset
+        return None
