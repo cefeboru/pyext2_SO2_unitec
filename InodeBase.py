@@ -11,7 +11,7 @@ class Inode(object):
     Base Metadata Structure of an inode:
     Mode, File Size, Created Date, Accesed Date, Deleted Date
     '''
-    _i_struct = 'iillllhhhhhhhhhhhhhhh'
+    _i_struct = '=iillllhhhhhhhhhhhhhhh'
     i_struct_size = struct.calcsize(_i_struct)
 
     def __init__(self):

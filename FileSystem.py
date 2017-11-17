@@ -2,13 +2,15 @@
 "Module to Handle the Ext2 File System"
 
 import os.path
+from bitarray import bitarray
 from InodeBase import Inode
 from InodeTable import InodeTable
 from Settings import Settings
 
 class FileSystem(object):
     '''
-    Class to Handle the Basic File system Operations, all sizes are in bytes.
+    Class to Handle the Basic File system Operations as read, write, delete
+    and create files. All size properties are in bytes.
     '''
 
     def __init__(self, filesystem_path):
@@ -28,24 +30,28 @@ class FileSystem(object):
                 print root_inode
                 print "Root Created at {0}".format(root_inode.i_cdate)
         else:
-            print "File system not found!"
-            print "Creating file system in file {0}".format(self.filesystem_path)
-            self._create_file_system(self.filesystem_path)
+            print "File system not found, please allocate the file system file first!"
 
     def _create_file_system(self, file_path=None):
         "Create a new ext2 file with the default structure"
         if file_path is not None:
             self.filesystem_path = file_path
         with open(self.filesystem_path, mode='wb') as file_object:
-            self.__allocate_space(Settings.datablock_bitmap_size, file_object)
-            self.__allocate_space(Settings.inode_bitmap_size, file_object)
+            self.__allocate_bitmap(Settings.datablock_bitmap_size, file_object)
+            self.__allocate_bitmap(Settings.inode_bitmap_size, file_object)
             self.__create_inode_table(Settings.inode_max_elements, file_object)
             self.__allocate_space(Settings.datablock_region_size, file_object)
 
     @classmethod
     def __allocate_space(cls, size, file_object):
-        chunk = bytearray(size)
+        chunk = "a"*size
         file_object.write(chunk)
+
+    @classmethod
+    def __allocate_bitmap(cls, size, file_object):
+        for i in xrange(size):
+            file_object.write(bitarray("1"*8).tobytes())
+        
 
     @classmethod
     def __create_inode_table(cls, table_len, file_object):

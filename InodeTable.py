@@ -2,6 +2,7 @@
 import struct
 from InodeBase import Inode
 from Settings import Settings
+from bitarray import bitarray
 
 class InodeTable(object):
     "Inode Table API to perform Read & Write Operations"
@@ -10,8 +11,7 @@ class InodeTable(object):
         '''
         Get Inode at position 0
         '''
-        size = struct.calcsize(Inode._i_struct)
-        binary_inode = file_object.read(size)
+        binary_inode = file_object.read(Settings.inode_size)
         inode = Inode().from_binary(binary_inode)
         return inode
 
@@ -20,10 +20,9 @@ class InodeTable(object):
         '''
         Read the Inode with the specified id
         '''
-        size = struct.calcsize(Inode._i_struct)
-        offset = inode_id * size
+        offset = inode_id * Settings.inode_size
         file_object.seek(offset, 1)
-        i_bytes = file_object.read(size)
+        i_bytes = file_object.read(Settings.inode_size)
         inode = Inode().from_binary(i_bytes)
         return inode
 
@@ -32,18 +31,12 @@ class InodeTable(object):
         '''
         Reads and return the first inode element that us unused
         '''
-        read_bytes = 0
-        bitmap_bytes = file_object.read(1)
+        bitmap_bytes = file_object.read(Settings.inode_bitmap_size)
         print "Inode Bitmap"
-        while read_bytes < Settings.inode_bitmap_size:
-            converted_short = struct.unpack('<h', bitmap_bytes)[0]
-            print "{0}".format(converted_short)
-        
-
-    @classmethod
-    def set_offset(cls, offset):
-        '''
-        Sets the table offset in bytes in the filesystem object
-        '''
-        cls._offset = offset
-        return None
+        data = bitarray()
+        data.frombytes(bitmap_bytes)
+        try:
+            free_inode_position = data.index(True)
+            return free_inode_position
+        except ValueError:
+            raise ValueError("No more free Inodes, please delete some files")
