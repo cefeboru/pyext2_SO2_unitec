@@ -13,17 +13,17 @@ class FileSystem(object):
 
     def __init__(self, filesystem_path):
         self.filesystem_path = filesystem_path
-        Settings["datablock_bitmap_size"] = Settings["datablock_max_elements"] / 8
-        Settings["datablock_region_size"] = Settings["datablock_size"] * Settings["datablock_max_elements"]
-        Settings["inode_bitmap_size"] = Settings["inode_max_elements"] / 8
-        Settings["inode_bitmap_offset"] =  Settings["datablock_bitmap_size"]
-        Settings["inode_table_size"] = Settings["inode_max_elements"] * Settings["inode_size"]
-        Settings["inode_table_offset"] = Settings["inode_bitmap_offset"] + Settings["inode_bitmap_size"]
+        Settings.datablock_bitmap_size = Settings.datablock_max_elements / 8
+        Settings.datablock_region_size = Settings.datablock_size * Settings.datablock_max_elements
+        Settings.inode_bitmap_size = Settings.inode_max_elements / 8
+        Settings.inode_bitmap_offset = Settings.datablock_bitmap_size
+        Settings.inode_table_size = Settings.inode_max_elements * Settings.inode_size
+        Settings.inode_table_offset = Settings.inode_bitmap_offset + Settings.inode_bitmap_size
 
         if os.path.isfile(filesystem_path):
             print "Loading root inode"
             with open(self.filesystem_path, mode = 'r+b') as fs_file:
-                fs_file.seek(Settings["inode_table_offset"])
+                fs_file.seek(Settings.inode_table_offset)
                 root_inode = InodeTable.get_inode(1, fs_file)
                 print root_inode
                 print "Root Created at {0}".format(root_inode.i_cdate)
@@ -37,10 +37,10 @@ class FileSystem(object):
         if file_path is not None:
             self.filesystem_path = file_path
         with open(self.filesystem_path, mode='wb') as file_object:
-            self.__allocate_space(Settings["datablock_bitmap_size"], file_object)
-            self.__allocate_space(Settings["inode_bitmap_size"], file_object)
-            self.__create_inode_table(Settings["inode_max_elements"], file_object)
-            self.__allocate_space(Settings["datablock_region_size"], file_object)
+            self.__allocate_space(Settings.datablock_bitmap_size, file_object)
+            self.__allocate_space(Settings.inode_bitmap_size, file_object)
+            self.__create_inode_table(Settings.inode_max_elements, file_object)
+            self.__allocate_space(Settings.datablock_region_size, file_object)
 
     @classmethod
     def __allocate_space(cls, size, file_object):
@@ -48,11 +48,11 @@ class FileSystem(object):
         file_object.write(chunk)
 
     @classmethod
-    def __create_inode_table(cls, len, file_object):
-        while len > 1:
+    def __create_inode_table(cls, table_len, file_object):
+        while table_len > 1:
             inode = Inode()
             file_object.write(inode.to_binary())
-            len = len-1
+            table_len = table_len-1
 
     def open_file(self, file_name):
         #TODO - READ INODE
@@ -66,6 +66,4 @@ class FileSystem(object):
         for b in bytes:
             for i in xrange(8):
                 yield (b >> i) & 1
-
-fs_instance = FileSystem("FS.ext2")
         

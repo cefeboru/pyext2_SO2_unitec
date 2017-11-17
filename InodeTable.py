@@ -32,7 +32,13 @@ class InodeTable(object):
         '''
         Reads and return the first inode element that us unused
         '''
-        bitmap_bytes = file_object.read(Settings.inode_bitmap_size)
+        read_bytes = 0
+        bitmap_bytes = file_object.read(1)
+        print "Inode Bitmap"
+        while read_bytes < Settings.inode_bitmap_size:
+            converted_short = struct.unpack('<h', bitmap_bytes)[0]
+            print "{0}".format(converted_short)
+        
 
     @classmethod
     def set_offset(cls, offset):
