@@ -1,9 +1,7 @@
 "Base Inode Structure"
-import binascii
 import calendar
 import time
 import struct
-from bitarray import bitarray
 
 
 class Inode(object):
