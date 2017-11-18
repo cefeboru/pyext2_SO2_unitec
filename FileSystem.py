@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"Module to Handle the Ext2 File System"
+'''
+Author: Cesar Bonilla
+Module to Handle the Ext2 File System
+'''
 
 import os.path
 from bitarray import bitarray
@@ -13,34 +16,17 @@ class FileSystem(object):
     and create files. All size properties are in bytes.
     '''
 
-    def __init__(self, filesystem_path):
-        self.filesystem_path = filesystem_path
-        Settings.datablock_bitmap_size = Settings.datablock_max_elements / 8
-        Settings.datablock_region_size = Settings.datablock_size * Settings.datablock_max_elements
-        Settings.inode_bitmap_size = Settings.inode_max_elements / 8
-        Settings.inode_bitmap_offset = Settings.datablock_bitmap_size
-        Settings.inode_table_size = Settings.inode_max_elements * Settings.inode_size
-        Settings.inode_table_offset = Settings.inode_bitmap_offset + Settings.inode_bitmap_size
+    def __init__(self, fs_file):
+        self.file_object = fs_file
 
-        if os.path.isfile(filesystem_path):
-            print "Loading root inode"
-            with open(self.filesystem_path, mode = 'r+b') as fs_file:
-                fs_file.seek(Settings.inode_table_offset)
-                root_inode = InodeTable.get_inode(1, fs_file)
-                print root_inode
-                print "Root Created at {0}".format(root_inode.i_cdate)
-        else:
-            print "File system not found, please allocate the file system file first!"
-
-    def _create_file_system(self, file_path=None):
+    def _create_file_system(self):
         "Create a new ext2 file with the default structure"
-        if file_path is not None:
-            self.filesystem_path = file_path
-        with open(self.filesystem_path, mode='wb') as file_object:
-            self.__allocate_bitmap(Settings.datablock_bitmap_size, file_object)
-            self.__allocate_bitmap(Settings.inode_bitmap_size, file_object)
-            self.__create_inode_table(Settings.inode_max_elements, file_object)
-            self.__allocate_space(Settings.datablock_region_size, file_object)
+        print "Allocating new file system at '{0}'".format(self.file_object)
+        self.__allocate_bitmap(Settings.datablock_bitmap_size, self.file_object)
+        self.__allocate_bitmap(Settings.inode_bitmap_size, self.file_object)
+        self.__create_inode_table(Settings.inode_max_elements, self.file_object)
+        self.__allocate_space(Settings.datablock_region_size, self.file_object)
+        print "File system allocated"
 
     @classmethod
     def __allocate_space(cls, size, file_object):
