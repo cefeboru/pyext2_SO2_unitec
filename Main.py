@@ -1,13 +1,25 @@
+"""
+ Author: Cesar Bonilla
+"""
+import os
 from FileSystem import FileSystem
 from Settings import Settings
-
-file_system = FileSystem("FS.ext2")
-file_system._create_file_system(file_system.filesystem_path)
-
-#Testing InodeTable
 from InodeTable import InodeTable
+from ClusterTable import ClusterTable
 
-with open("FS.ext2", "rb") as fs_file:
-    fs_file.seek(Settings.inode_bitmap_offset)
-    position = InodeTable.get_first_free_inode(fs_file)
-    print "The first inode empty is in {0} position".format(position)
+with open("FS_test.ext2", "wb") as fs_file:
+    file_system = FileSystem(fs_file)
+    file_system._create_file_system()
+
+with open("FS_test.ext2", "r+b") as fs_file:
+    file_system = FileSystem(fs_file)
+    #Test InodeTable > Get Root Inode
+    root_inode = InodeTable.get_inode(1, fs_file)
+    print "Root Inode: {0}".format(root_inode)
+    #Testing InodeTable > Get Free Inode
+    free_inode = InodeTable.get_free_inode_index(fs_file)
+    print "First free inode is in index {0}".format(free_inode)
+    #Testing Cluster Table > Get free cluster
+    free_cluster, cluster_offset = ClusterTable.get_next_free_cluster(fs_file)
+    print "Free Cluster should be 0, is {0}".format(free_cluster)
+    print "Free Cluster offset is {0}".format(cluster_offset)
