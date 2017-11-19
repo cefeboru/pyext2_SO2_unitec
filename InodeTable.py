@@ -13,6 +13,7 @@ class InodeTable(object):
         '''
         Get Inode at position 0
         '''
+        file_object.seek(Settings.inode_table_offset)
         binary_inode = file_object.read(Settings.inode_size)
         inode = Inode().from_binary(binary_inode)
         return inode
@@ -28,6 +29,15 @@ class InodeTable(object):
         i_bytes = file_object.read(Settings.inode_size)
         inode = Inode().from_binary(i_bytes)
         return inode
+
+    @classmethod
+    def set_inode(cls, index, inode, file_object):
+        '''
+        Writes the inode to the indicated position(inode_id).
+        '''
+        file_object.seek(Settings.inode_table_offset)
+        file_object.seek(Settings.inode_size * index, 1)
+        file_object.write(inode.to_binary())
 
     @classmethod
     def get_free_inode_index(cls, file_object):
@@ -55,9 +65,9 @@ class InodeTable(object):
         data.frombytes(bitmap_bytes)
         try:
             data[inode_id] = 0
-            marked_inode = data[inode_id]
-            return marked_inode
+            file_object.seek(Settings.inode_bitmap_offset)
+            file_object.write(data.tobytes())
         except ValueError:
             raise ValueError("Unable to set inode as occupied")
-       
+
         
