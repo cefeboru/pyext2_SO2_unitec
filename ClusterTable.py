@@ -13,7 +13,7 @@ class ClusterTable(object):
     def __init__(self, file_object):
         self.file_object = file_object
 
-    def get_next_free_cluster(self):
+    def get_free_cluster(self):
         '''
         Reads and return the first cluster index that is unused.
         Returns a tuple containin the Cluster ID and cluster offset: (cluster_id, cluster_offset)
@@ -23,9 +23,9 @@ class ClusterTable(object):
         data = bitarray()
         data.frombytes(bitmap_bytes)
         try:
-            free_inode_position = data.index(True)
-            offset = Settings.datablock_region_offset + (free_inode_position * Settings.datablock_size)
-            return (free_inode_position, offset)
+            free_block_index = data.index(True)
+            offset = Settings.datablock_region_offset + (free_block_index * Settings.datablock_size)
+            return (free_block_index, offset)
         except ValueError:
             raise ValueError("No more free Clusters, please delete some files")
 
@@ -44,18 +44,3 @@ class ClusterTable(object):
         except ValueError:
             raise ValueError("Unable to set inode as occupied")
 
-    def read_block_as_directory(self, cluster_id, size):
-        '''
-        Reads the block data as dir entries, returns a list of entries
-        '''
-        self.file_object.seek(Settings.datablock_region_offset)
-        self.file_object.seek(Settings.datablock_size * cluster_id, 1)
-        binary_dirs = self.file_object.read(size)
-
-class DirEntry(object):
-    def __init__(self, inode_id, rec_len, name_len, file_type, name):
-        self.inode_id = inode_id
-        self.rec_len = rec_len
-        self.name_len = name_len
-        self.file_type = file_type
-        self.name = name
