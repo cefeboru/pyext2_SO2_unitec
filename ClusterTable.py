@@ -43,4 +43,3 @@ class ClusterTable(object):
             self.file_object.write(data.tobytes())
         except ValueError:
             raise ValueError("Unable to set inode as occupied")
-
