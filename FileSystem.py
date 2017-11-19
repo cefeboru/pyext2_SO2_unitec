@@ -20,6 +20,8 @@ class FileSystem(object):
     def __init__(self, fs_file):
         self.file_object = fs_file
         self.working_dir = "/"
+        self.InodeTable = InodeTable(fs_file)
+        self.ClusterTable = ClusterTable(fs_file)
 
     def _create_file_system(self):
         "Create a new ext2 file with the default structure"
@@ -60,24 +62,25 @@ class FileSystem(object):
         '''
         Sets the Inode & Block 0 as occupied and updates the root inode block.
         '''
-        InodeTable.set_inode_as_occupied(0, self.file_object)
-        ClusterTable.set_cluster_as_occupied(0, self.file_object)
-        root_inode = InodeTable.get_root_inode(self.file_object)
+        self.InodeTable.set_inode_as_occupied(0)
+        self.ClusterTable.set_cluster_as_occupied(0)
+        root_inode = self.InodeTable.get_root_inode()
         print "Root Inode cri: {0}".format(root_inode)
         
         #Creating dir entry
         print "Allocating first block for root inode"
-        root_inode.i_size += self.__add_dir_entry("/", 0)
-        InodeTable.set_inode(0, root_inode, self.file_object)
+        root_inode.i_size += self.__add_dir_entry("/", 0, 0)
+        self.InodeTable.set_inode(0, root_inode)
         print "Allocated"
 
-    def __add_dir_entry(self, dir_entry_name, inode_id):
+    def __add_dir_entry(self, file_name, inode_id, file_type):
         '''
         Adds a new dir entry at the current directory and returns the dir entry size
         '''
-        struct_mask = 'ii{0}s'.format(len(dir_entry_name))
+        name_len = len(file_name)
+        struct_mask = '=hhhh{0}s'.format(name_len)
         dir_entry_size = struct.calcsize(struct_mask)
-        block_data = struct.pack(struct_mask, dir_entry_size, inode_id, dir_entry_name)
+        block_data = struct.pack(struct_mask, inode_id, dir_entry_size, name_len, file_type, file_name)
         self.file_object.seek(Settings.datablock_region_offset)
         self.file_object.seek(Settings.inode_size * inode_id, 1)
         self.file_object.write(block_data)
@@ -88,7 +91,7 @@ class FileSystem(object):
         Creates a new file and return the assigned Inode ID
         '''
         inode_id = -1
-        InodeTable.get_free_inode_index(self.file_object)
+        self.InodeTable.get_free_inode_index()
         return inode_id
 
 

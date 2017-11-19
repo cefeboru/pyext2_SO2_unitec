@@ -8,44 +8,44 @@ from bitarray import bitarray
 
 class InodeTable(object):
     "Inode Table API to perform Read & Write Operations"
-    @classmethod
-    def get_root_inode(cls, file_object):
+
+    def __init__(self, file_object):
+        self.file_object = file_object
+
+    def get_root_inode(self):
         '''
         Get Inode at position 0
         '''
-        file_object.seek(Settings.inode_table_offset)
-        binary_inode = file_object.read(Settings.inode_size)
+        self.file_object.seek(Settings.inode_table_offset)
+        binary_inode = self.file_object.read(Settings.inode_size)
         inode = Inode().from_binary(binary_inode)
         return inode
 
-    @classmethod
-    def get_inode(cls, inode_id, file_object):
+    def get_inode(self, inode_id):
         '''
         Read the Inode with the specified id
         '''
-        file_object.seek(Settings.inode_table_offset)
+        self.file_object.seek(Settings.inode_table_offset)
         inode_offset = inode_id * Settings.inode_size
-        file_object.seek(inode_offset, 1)
-        i_bytes = file_object.read(Settings.inode_size)
+        self.file_object.seek(inode_offset, 1)
+        i_bytes = self.file_object.read(Settings.inode_size)
         inode = Inode().from_binary(i_bytes)
         return inode
 
-    @classmethod
-    def set_inode(cls, index, inode, file_object):
+    def set_inode(self, index, inode):
         '''
         Writes the inode to the indicated position(inode_id).
         '''
-        file_object.seek(Settings.inode_table_offset)
-        file_object.seek(Settings.inode_size * index, 1)
-        file_object.write(inode.to_binary())
+        self.file_object.seek(Settings.inode_table_offset)
+        self.file_object.seek(Settings.inode_size * index, 1)
+        self.file_object.write(inode.to_binary())
 
-    @classmethod
-    def get_free_inode_index(cls, file_object):
+    def get_free_inode_index(self):
         '''
         Reads and return the first inode element that is free
         '''
-        file_object.seek(Settings.inode_bitmap_offset)
-        bitmap_bytes = file_object.read(Settings.inode_bitmap_size)
+        self.file_object.seek(Settings.inode_bitmap_offset)
+        bitmap_bytes = self.file_object.read(Settings.inode_bitmap_size)
         data = bitarray()
         data.frombytes(bitmap_bytes)
         try:
@@ -54,20 +54,17 @@ class InodeTable(object):
         except ValueError:
             raise ValueError("No more free Inodes, please delete some files")
 
-    @classmethod
-    def set_inode_as_occupied(cls, inode_id, file_object):
+    def set_inode_as_occupied(self, inode_id):
         '''
         Stablish the inode as occupied, will set the bit to 0 in the bitmap
         '''
-        file_object.seek(Settings.inode_bitmap_offset)
-        bitmap_bytes = file_object.read(Settings.inode_bitmap_size)
+        self.file_object.seek(Settings.inode_bitmap_offset)
+        bitmap_bytes = self.file_object.read(Settings.inode_bitmap_size)
         data = bitarray()
         data.frombytes(bitmap_bytes)
         try:
             data[inode_id] = 0
-            file_object.seek(Settings.inode_bitmap_offset)
-            file_object.write(data.tobytes())
+            self.file_object.seek(Settings.inode_bitmap_offset)
+            self.file_object.write(data.tobytes())
         except ValueError:
             raise ValueError("Unable to set inode as occupied")
-
-        
