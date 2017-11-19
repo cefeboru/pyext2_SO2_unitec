@@ -36,9 +36,9 @@ class InodeTable(object):
         '''
         Writes the inode to the indicated position(inode_id).
         '''
-        self.file_object.seek(Settings.inode_table_offset)
-        self.file_object.seek(Settings.inode_size * index, 1)
+        self.file_object.seek(Settings.inode_table_offset + (Settings.inode_size * index))
         self.file_object.write(inode.to_binary())
+        return True
 
     def get_free_inode_index(self):
         '''
