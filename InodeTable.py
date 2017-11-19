@@ -49,4 +49,13 @@ class InodeTable(object):
         '''
         Stablish the inode as occupied, will set the bit to 0 in the bitmap
         '''
-        raise ValueError("To be implemented @Gisselle")
+        offset = Settings.inode_bitmap_offset + (inode_id - 1 * 64)
+        data = bitarray()
+        data.frombytes(offset)
+        try:
+            marked_inode = data.index(0)
+            return marked_inode
+        except ValueError:
+            raise ValueError("Unable to set inode as occupied")
+       
+        
