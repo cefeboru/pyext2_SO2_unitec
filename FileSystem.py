@@ -8,6 +8,7 @@ import struct
 import calendar
 import time
 import math
+import os
 from bitarray import bitarray
 from InodeBase import Inode
 from ClusterTable import ClusterTable
@@ -142,12 +143,15 @@ class FileSystem(object):
         Change the current working directory.
         '''
         directory = self.is_directory(directory_name)
+        '''
         if directory[0]:
             self.working_dir += directory_name
             self.__current_inode_id = directory[1]
+            print "Changed directory"
             return True
         else:
             return False
+    '''
 
     def is_directory(self, directory_name):
         '''
@@ -161,6 +165,7 @@ class FileSystem(object):
                 if f_inode.i_mode == 1:
                     return (True, item.inode_id)
                 else:
+                    print "NOT DIRECTORY"
                     return (False, -1)
 
     def is_file(self, file_name):
@@ -220,7 +225,7 @@ class FileSystem(object):
         '''
         self.inode_table.change_inode_state(0, 0)
         self.cluster_table.change_cluster_state(0, 0)
-     , 0   self.__root_inode = self.inode_table.get_root_inode()
+        self.__root_inode = self.inode_table.get_root_inode()
         self.__current_inode_id = 0
         # TODO ADD CURRENT DIRECTORY "."
 
@@ -286,6 +291,21 @@ class FileSystem(object):
             files_list.append(DirEntry(inode_id, rec_len,
                                        name_len, file_type, file_name))
         return files_list
+
+    def remove_file(self, file_name):
+        state = 1
+        if self.is_file(file_name):            
+            files_list = list()
+            files_list = self.__get_files()
+            for i in files_list:
+                if file_name == i.name:
+                    inode_id = i.inode_id
+                    file_blocks = int(math.ceil(float(i.rec_len) / float(Settings.datablock_size)))
+                    InodeTable.change_inode_state(inode_id, state)
+                    break        
+
+        
+
 
 
 class DirEntry(object):
