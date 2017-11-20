@@ -14,6 +14,7 @@ if not os.path.isfile(file_path):
 with open(file_path, "r+b") as fs_file:
     
     file_system = FileSystem(fs_file, new_fs)
+    file_system.write_file("test.txt", "Test")
     """
     if new_fs:
     file_system._create_file_system()
@@ -21,7 +22,7 @@ with open(file_path, "r+b") as fs_file:
     file_system.read_file("cesar.txt")
     file_system.create_directory("test")
     file_system.list_files()
-    file_system.write_file("test.txt", "Test")
+    
     file_system.read_file("test.txt")
     """
     while True:
@@ -42,14 +43,3 @@ with open(file_path, "r+b") as fs_file:
             file_system.remove_file(cmd[1])
         elif cmd[0] == "exit": 
             break
-            
-        
-        
-        
-        
-
-        
-        
-        
-        
-        

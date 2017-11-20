@@ -160,13 +160,10 @@ class FileSystem(object):
         '''
         files = self.__get_files()
         for item in files:
-            if item.name == directory_name:
-                f_inode = self.inode_table.get_inode(item.inode_id)
-                if f_inode.i_mode == 1:
-                    return (True, item.inode_id)
-                else:
-                    print "NOT DIRECTORY"
-                    return (False, -1)
+            f_inode = self.inode_table.get_inode(item.inode_id)
+            if item.name == directory_name and item.file_type == 1 and f_inode.i_ddate == 0:                
+                return (True, item.inode_id)
+        return (False, -1)
 
     def is_file(self, file_name):
         '''
@@ -179,7 +176,7 @@ class FileSystem(object):
                 print "Match names"
                 f_inode = self.inode_table.get_inode(item.inode_id)
                 print f_inode
-                if f_inode.i_mode == 0:
+                if f_inode.i_mode == 0 and f_inode.i_ddate == 0:
                     return (True, item.inode_id)
                 else:
                     return (False, -1)
@@ -236,10 +233,13 @@ class FileSystem(object):
         current_inode = self.inode_table.get_inode(self.__current_inode_id)
         child_inode_id = self.inode_table.get_free_inode_index()
         current_inode.i_size += self.__add_dir_entry(
-            file_name, child_inode_id, file_type, 0)
+            file_name, child_inode_id, file_type, self.__current_inode_id)
         current_inode.i_mdate = calendar.timegm(time.gmtime())
         self.inode_table.set_inode(self.__current_inode_id, current_inode)
         self.inode_table.change_inode_state(child_inode_id, 0)
+        child_inode = self.inode_table.get_inode(child_inode_id)
+        child_inode.i_mode = file_type
+        self.inode_table.set_inode(child_inode_id, child_inode)
         return child_inode_id
 
     def __add_dir_entry(self, file_name, inode_id, file_type, parent_inode_id):
@@ -293,18 +293,19 @@ class FileSystem(object):
         return files_list
 
     def remove_file(self, file_name):
-        state = 1
         if self.is_file(file_name):            
             files_list = list()
             files_list = self.__get_files()
-            for i in files_list:
-                if file_name == i.name:
-                    inode_id = i.inode_id
-                    file_blocks = int(math.ceil(float(i.rec_len) / float(Settings.datablock_size)))
-                    InodeTable.change_inode_state(inode_id, state)
-                    break        
-
-        
+            for dir_entry in files_list:
+                if file_name == dir_entry.name and dir_entry.file_type == 0:
+                    inode = self.inode_table.get_inode(dir_entry.inode_id)
+                    self.inode_table.change_inode_state(dir_entry.inode_id, 1)
+                    file_blocks = int(math.ceil(float(inode.i_size) / float(Settings.datablock_size)))
+                    for index in xrange(0, file_blocks):
+                        self.cluster_table.change_cluster_state(inode.i_blocks[index], 1)
+                    inode.i_ddate = calendar.timegm(time.gmtime())
+                    self.inode_table.set_inode(dir_entry.inode_id, inode)
+                    break
 
 
 
