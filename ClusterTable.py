@@ -29,17 +29,17 @@ class ClusterTable(object):
         except ValueError:
             raise ValueError("No more free Clusters, please delete some files")
 
-    def set_cluster_as_occupied(self, cluster_id):
+    def change_cluster_state(self, cluster_id, state):
         '''
-        Set the clusters as occupied, changing the bit state from 1 to 0
+        Set the clusters as occupied or free, changing the bit state from 1 to 0
         '''
         self.file_object.seek(Settings.datablock_bitmap_offset)
         bitmap_bytes = self.file_object.read(Settings.datablock_bitmap_size)
         data = bitarray()
         data.frombytes(bitmap_bytes)
         try:
-            data[cluster_id] = 0
+            data[cluster_id] = state
             self.file_object.seek(Settings.datablock_bitmap_offset)
             self.file_object.write(data.tobytes())
         except ValueError:
-            raise ValueError("Unable to set inode as occupied")
+            raise ValueError("Unable to set cluster as occupied or free")

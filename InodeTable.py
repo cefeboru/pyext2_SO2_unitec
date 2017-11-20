@@ -54,17 +54,17 @@ class InodeTable(object):
         except ValueError:
             raise ValueError("No more free Inodes, please delete some files")
 
-    def set_inode_as_occupied(self, inode_id):
+    def change_inode_state(self, inode_id, state):
         '''
-        Stablish the inode as occupied, will set the bit to 0 in the bitmap
+        Stablish the inode as occupied or free, will set the bit to 0 in the bitmap
         '''
         self.file_object.seek(Settings.inode_bitmap_offset)
         bitmap_bytes = self.file_object.read(Settings.inode_bitmap_size)
         data = bitarray()
         data.frombytes(bitmap_bytes)
         try:
-            data[inode_id] = 0
+            data[inode_id] = state
             self.file_object.seek(Settings.inode_bitmap_offset)
             self.file_object.write(data.tobytes())
         except ValueError:
-            raise ValueError("Unable to set inode as occupied")
+            raise ValueError("Unable to set inode as occupied or free")

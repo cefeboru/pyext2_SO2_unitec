@@ -84,7 +84,7 @@ class FileSystem(object):
             if block == 0: #Means it has no block assigned
                 block_id, block_offset = self.cluster_table.get_free_cluster()
                 inode.i_blocks[index_block] = block_id
-                self.cluster_table.set_cluster_as_occupied(block_id)
+                self.cluster_table.change_cluster_state(block_id, 0)
                 print "Index: {0}, block: {1}".format(index_bytes, block_id)
             else:
                 block_id = block
@@ -218,9 +218,9 @@ class FileSystem(object):
         '''
         Sets the Inode & Block 0 as occupied and updates the root inode block.
         '''
-        self.inode_table.set_inode_as_occupied(0)
-        self.cluster_table.set_cluster_as_occupied(0)
-        self.__root_inode = self.inode_table.get_root_inode()
+        self.inode_table.change_inode_state(0, 0)
+        self.cluster_table.change_cluster_state(0, 0)
+     , 0   self.__root_inode = self.inode_table.get_root_inode()
         self.__current_inode_id = 0
         # TODO ADD CURRENT DIRECTORY "."
 
@@ -234,7 +234,7 @@ class FileSystem(object):
             file_name, child_inode_id, file_type, 0)
         current_inode.i_mdate = calendar.timegm(time.gmtime())
         self.inode_table.set_inode(self.__current_inode_id, current_inode)
-        self.inode_table.set_inode_as_occupied(child_inode_id)
+        self.inode_table.change_inode_state(child_inode_id, 0)
         return child_inode_id
 
     def __add_dir_entry(self, file_name, inode_id, file_type, parent_inode_id):
