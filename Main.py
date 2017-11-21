@@ -23,15 +23,10 @@ with open(file_path, "r+b") as fs_file:
     
     file_system.read_file("test.txt")
     """
-    print "Creating file 1.txt"
     file_system.create_file("1.txt")
-    print "Creating file 2.txt"
     file_system.create_file("2.txt")
-    print "Creating file 3.txt"
     file_system.create_file("3.txt")
-    print "Creating file 4.txt"
     file_system.create_file("4.txt")
-    print "Creating file 5.txt"
     file_system.create_file("5.txt")
     while True:
         parameters = raw_input("{0}$: ".format(file_system.working_dir))
@@ -53,7 +48,7 @@ with open(file_path, "r+b") as fs_file:
         elif cmd[0] == "mkdir":
             file_system.create_directory(cmd[1])
         elif cmd[0] == "rmdir":
-            print "Hola"
+            file_system.remove_directory(cmd[1])
         elif cmd[0] == "rm":
             file_system.remove_file(cmd[1])
         elif cmd[0] == "exit": 

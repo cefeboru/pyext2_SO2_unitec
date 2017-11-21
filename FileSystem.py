@@ -44,7 +44,8 @@ class FileSystem(object):
             while bytes_to_read > 0 and blocks_index < file_blocks:
                 block = inode.i_blocks[blocks_index]
                 data_region_offset = Settings.datablock_region_offset
-                self.file_object.seek(data_region_offset + (block * Settings.datablock_size))
+                #self.file_object.seek(data_region_offset + (block * Settings.datablock_size))
+                self.file_object.seek(block)
                 if bytes_to_read >= Settings.datablock_size:
                     file_data += str(self.file_object.read(Settings.datablock_region_size))
                     bytes_to_read -= Settings.datablock_region_size
@@ -81,11 +82,12 @@ class FileSystem(object):
             block = inode.i_blocks[index_block]
             if block == 0: #Means it has no block assigned
                 block_id, block_offset = self.cluster_table.get_free_cluster()
-                inode.i_blocks[index_block] = block_id
+                inode.i_blocks[index_block] = block_offset
                 self.cluster_table.change_cluster_state(block_id, 0)
             else:
                 block_id = block
-                block_offset = Settings.datablock_region_offset + (block_id * Settings.datablock_size)
+                #block_offset = Settings.datablock_region_offset + (block_id * Settings.datablock_size)
+                block_offset = block
             self.file_object.seek(block_offset)
             if bytes_to_write > Settings.datablock_size:
                 _data = data[index_bytes:Settings.datablock_size + 1]
@@ -243,7 +245,10 @@ class FileSystem(object):
         child_inode.i_ddate = 0
         child_inode.i_cdate = calendar.timegm(time.gmtime())
         child_inode.i_mode = file_type
-        child_inode.i_blocks = [0, 0, 0, 0, 0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0]
+        child_inode.i_size = 0
+        free_cluster_id, free_cluster_offset = self.cluster_table.get_free_cluster()
+        child_inode.i_blocks = [free_cluster_offset, 0, 0, 0, 0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0]
+        self.cluster_table.change_cluster_state(free_cluster_id, 0)
         self.inode_table.write_inode(child_inode_id, child_inode)
         self.inode_table.change_inode_state(child_inode_id, 0)
         return child_inode_id
@@ -290,12 +295,15 @@ class FileSystem(object):
         except ValueError:
             return False
 
-    def __get_files(self):
+    def __get_files(self, inode_id = -1):
         '''
         Returns the files under the directory.
         '''
+        if inode_id > 0:
+            current_inode = self.inode_table.get_inode(inode_id)
+        else:
+            current_inode = self.inode_table.get_inode(self.__current_inode_id)
         files_list = list()
-        current_inode = self.inode_table.get_inode(self.__current_inode_id)
         data_size = current_inode.i_size
         bytes_readed = 0
         self.file_object.seek(Settings.datablock_region_offset)
@@ -326,6 +334,27 @@ class FileSystem(object):
                 self.inode_table.change_inode_state(entry.inode_id, 1)
                 curdir_dir_entries.remove(entry)
                 print "Removed Inode: {0}".format(self.inode_table.get_inode(entry.inode_id))
+        self.__set_dir_entries(curdir_dir_entries)
+
+    def __remove_directory_rec(self, dir_name, inode_id = -1):
+        previous_inode_id = self.__current_inode_id
+        if inode_id > 0:
+            self.__current_inode_id = inode_id
+        curdir_dir_entries = self.__get_files()
+        #Deleting files in directory
+        for entry in curdir_dir_entries:
+            if entry.file_type == 0:
+                self.remove_file(entry.name)
+            else:
+                self.remove_directory(entry.name, entry.inode_id)
+        self.__current_inode_id = previous_inode_id
+    
+    def remove_directory(self, dir_name):
+        curdir_dir_entries = self.__get_files()
+        for entry in curdir_dir_entries:
+            if entry.name == dir_name:
+                self.__remove_directory_rec(dir_name)
+                curdir_dir_entries.remove(entry)
         self.__set_dir_entries(curdir_dir_entries)
 
 class DirEntry(object):
