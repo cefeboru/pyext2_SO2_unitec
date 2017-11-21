@@ -9,7 +9,7 @@ class Inode(object):
     Base Metadata Structure of an inode:
     Mode, File Size, Created Date, Accesed Date, Deleted Date
     '''
-    _i_struct = '=iillll' + "i"*15
+    _i_struct = '=iillll' + "h"*15
     i_struct_size = struct.calcsize(_i_struct)
 
     def __init__(self):
@@ -20,18 +20,6 @@ class Inode(object):
         self.i_mdate = calendar.timegm(time.gmtime())
         self.i_ddate = 0
         self.i_blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
-    def is_file(self):
-        # TODO
-        return False
-
-    def is_directyory(self):
-        # TODO
-        return False
-
-    def is_socket(self):
-        # TODO
-        return False
 
     def to_binary(self):
         "Convert currents instance to bytes using struct.pack"

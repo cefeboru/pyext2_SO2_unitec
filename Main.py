@@ -29,7 +29,7 @@ with open(file_path, "r+b") as fs_file:
     file_system.create_file("4.txt")
     file_system.create_file("5.txt")
     while True:
-        parameters = raw_input("{0}$: ".format(file_system.working_dir))
+        parameters = raw_input("{0}:$ ".format(file_system.working_dir))
         string_init = parameters.find('"') + 1
         string_end = parameters.find('"', string_init)
         file_content = parameters[string_init:string_end]

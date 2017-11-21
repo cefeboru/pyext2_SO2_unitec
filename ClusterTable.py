@@ -16,7 +16,7 @@ class ClusterTable(object):
     def get_free_cluster(self):
         '''
         Reads and return the first cluster index that is unused.
-        Returns a tuple containin the Cluster ID and cluster offset: (cluster_id, cluster_offset)
+        Returns a tuple containin the Cluster Index and cluster offset: (cluster_id, cluster_offset)
         '''
         self.file_object.seek(Settings.datablock_bitmap_offset)
         bitmap_bytes = self.file_object.read(Settings.datablock_bitmap_size)
