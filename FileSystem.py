@@ -130,7 +130,6 @@ class FileSystem(object):
         '''
         is_dir, inode_id = self.is_directory(directory_name)
         if not is_dir:
-            print "Creating dir in {0}".format(self.__current_inode_id)
             created_id = self.__create_file(directory_name, 1)
             inode = self.inode_table.get_inode(created_id)
             inode.i_size += self.__add_dir_entry(".", created_id, 1, created_id)
@@ -350,6 +349,8 @@ class FileSystem(object):
         curdir_dir_entries = self.__get_files(self.__current_inode_id)
         #Deleting files in directory
         for entry in curdir_dir_entries:
+            if entry.name == "." or entry.name == "..":
+                continue
             if entry.file_type == 0:
                 self.remove_file(entry.name)
             else:
@@ -360,10 +361,10 @@ class FileSystem(object):
         '''
         Removes the directory and its child elements
         '''
-        curdir_dir_entries = self.__get_files()
+        curdir_dir_entries = self.__get_files(self.__current_inode_id)
         for entry in curdir_dir_entries:
             if entry.name == dir_name:
-                self.__remove_directory_rec(dir_name)
+                self.__remove_directory_rec(entry.inode_id)
                 curdir_dir_entries.remove(entry)
         self.__set_dir_entries(curdir_dir_entries)
 
