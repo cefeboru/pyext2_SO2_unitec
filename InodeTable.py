@@ -32,7 +32,7 @@ class InodeTable(object):
         inode = Inode().from_binary(i_bytes)
         return inode
 
-    def set_inode(self, index, inode):
+    def write_inode(self, index, inode):
         '''
         Writes the inode to the indicated position(inode_id).
         '''
