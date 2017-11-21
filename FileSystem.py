@@ -35,6 +35,7 @@ class FileSystem(object):
         is_file, inode_id = self.is_file(file_name)
         if is_file:
             inode = self.inode_table.get_inode(inode_id)
+            inode.i_adate = calendar.timegm(time.gmtime())
             bytes_to_read = inode.i_size
             #How much blocks the file has assigned
             file_blocks = int(math.ceil(float(bytes_to_read) / float(Settings.datablock_size)))
@@ -53,6 +54,7 @@ class FileSystem(object):
                     blocks_index += 1
                     break
             print struct.unpack("={0}s".format(inode.i_size), file_data)[0]
+            print inode
         else:
             print "File not found '{0}'".format(file_name)
 
