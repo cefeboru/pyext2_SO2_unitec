@@ -23,10 +23,18 @@ with open(file_path, "r+b") as fs_file:
     
     file_system.read_file("test.txt")
     """
-    file_system.create_file("prueba.txt")
-    file_system.create_file("prueba2.txt")
+    print "Creating file 1.txt"
+    file_system.create_file("1.txt")
+    print "Creating file 2.txt"
+    file_system.create_file("2.txt")
+    print "Creating file 3.txt"
+    file_system.create_file("3.txt")
+    print "Creating file 4.txt"
+    file_system.create_file("4.txt")
+    print "Creating file 5.txt"
+    file_system.create_file("5.txt")
     while True:
-        parameters = raw_input("Enter command: ")
+        parameters = raw_input("{0}$: ".format(file_system.working_dir))
         cmd = parameters.split(" ")
        
         if cmd[0] == "cd":
