@@ -106,6 +106,7 @@ class FileSystem(object):
         "Reads the current directory and returns/prints the list of files."
         print "List Files at {0}".format(self.working_dir)
         files = self.__get_files()
+        files = sorted(files, key=lambda file:file.name)
         for item in files:
             inode = self.inode_table.get_inode(item.inode_id)
             if inode.i_ddate != 0:
