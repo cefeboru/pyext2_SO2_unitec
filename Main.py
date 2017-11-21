@@ -23,6 +23,8 @@ with open(file_path, "r+b") as fs_file:
     
     file_system.read_file("test.txt")
     """
+    file_system.create_file("prueba.txt")
+    file_system.create_file("prueba2.txt")
     while True:
         parameters = raw_input("Enter command: ")
         string_init = parameters.find('"') + 1
