@@ -25,12 +25,19 @@ with open(file_path, "r+b") as fs_file:
     """
     while True:
         parameters = raw_input("Enter command: ")
+        string_init = parameters.find('"') + 1
+        string_end = parameters.find('"', string_init)
+        file_content = parameters[string_init:string_end]
+        parameters = parameters.replace('"'+file_content+'"', "")
+        parameters = " ".join(parameters.split())
         cmd = parameters.split(" ")
-       
+
         if cmd[0] == "cd":
             file_system.change_directory(cmd[1])
         elif cmd[0] == "cat":
             file_system.read_file(cmd[1])
+        elif cmd[0] == "echo" and cmd[1] == ">":
+            file_system.write_file(cmd[2], file_content)
         elif cmd[0] == "ls":
             file_system.list_files()
         elif cmd[0] == "mkdir":

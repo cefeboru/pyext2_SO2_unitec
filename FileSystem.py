@@ -132,7 +132,7 @@ class FileSystem(object):
         '''
         Creates a new directory and returns the assigned Inode ID.
         '''
-        if not self.is_directory(directory_name):
+        if not self.is_directory(directory_name)[0]:
             return self.__create_file(directory_name, 1)
         else:
             print "Directory already exists"
@@ -143,7 +143,7 @@ class FileSystem(object):
         Change the current working directory.
         '''
         directory = self.is_directory(directory_name)
-        '''
+        
         if directory[0]:
             self.working_dir += directory_name
             self.__current_inode_id = directory[1]
@@ -151,7 +151,6 @@ class FileSystem(object):
             return True
         else:
             return False
-    '''
 
     def is_directory(self, directory_name):
         '''
