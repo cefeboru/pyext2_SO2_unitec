@@ -54,6 +54,11 @@ class InodeTable(object):
         except ValueError:
             raise ValueError("No more free Inodes, please delete some files")
 
+    def get_free_inode(self):
+        "Returns the next free inode"
+        index = self.get_free_inode_index()
+        return (index, self.get_inode(index))
+
     def change_inode_state(self, inode_id, state):
         '''
         Stablish the inode as occupied or free, will set the bit to 0 in the bitmap

@@ -19,7 +19,7 @@ class Inode(object):
         self.i_adate = 0
         self.i_mdate = calendar.timegm(time.gmtime())
         self.i_ddate = 0
-        self.i_blocks = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.i_blocks = [0]*15
 
     def to_binary(self):
         "Convert currents instance to bytes using struct.pack"
@@ -55,6 +55,13 @@ class Inode(object):
         self.i_blocks[13] = unpacked_data[19]
         self.i_blocks[14] = unpacked_data[20]
         return self
+
+    def set_block(self, index, block):
+        "Assign a block to the inode"
+        if index <= 12:
+            self.i_blocks[index] = block
+        else:
+            raise ValueError("Bloques indirectos no implementados")
 
     def __str__(self):
         format_mask = '({0}, {1}, {2}, {3}, {4}, {5} ,{6} ,{7} ,{8}, {9} ,{10} ,{11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20})'

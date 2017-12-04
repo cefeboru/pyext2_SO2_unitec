@@ -14,3 +14,4 @@ class Settings(object):
     inode_table_size = inode_size * inode_max_elements
     inode_table_offset = datablock_bitmap_size + inode_bitmap_size
     datablock_region_offset = inode_table_offset + inode_table_size
+    DEBUG = True

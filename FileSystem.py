@@ -31,8 +31,13 @@ class FileSystem(object):
         print "Inode Size: {0}".format(Settings.inode_size)
         if not create_fs:
             self.__root_inode = self.inode_table.get_root_inode()
+        print "Blocks Bitmap Offset: {0}".format(Settings.datablock_bitmap_offset)
+        print "Inodes Bitmap Offset: {0}".format(Settings.inode_bitmap_offset)
+        print "Inode Table Offset: {0}".format(Settings.inode_table_offset)
+        print "Data Region offset: {0}".format(Settings.datablock_region_offset)
 
     def read_file(self, file_name):
+        "Interface to read a file by name"
         is_file, inode_id = self.is_file(file_name)
         if is_file:
             inode = self.inode_table.get_inode(inode_id)
@@ -46,19 +51,20 @@ class FileSystem(object):
                 block = inode.i_blocks[blocks_index]
                 data_region_offset = Settings.datablock_region_offset
                 self.file_object.seek(data_region_offset + (block * Settings.datablock_size))
-                if bytes_to_read >= Settings.datablock_size:
-                    file_data += str(self.file_object.read(Settings.datablock_region_size))
-                    bytes_to_read -= Settings.datablock_region_size
+                if bytes_to_read > Settings.datablock_size:
+                    file_data += self.file_object.read(Settings.datablock_size)
+                    bytes_to_read -= Settings.datablock_size
                     blocks_index += 1
                 else:
-                    file_data += str(self.file_object.read(bytes_to_read))
+                    file_data += self.file_object.read(bytes_to_read)
                     blocks_index += 1
                     break
+            print "Data len: {0}".format(len(str(file_data)))
             print struct.unpack("={0}s".format(inode.i_size), file_data)[0]
         else:
             print "File not found '{0}'".format(file_name)
 
-    def write_file(self, file_name, data):
+    def write_file(self, file_name, data, append=False):
         '''
         Write text to a file, overwriting it if it exists or crating it.
         '''
@@ -69,14 +75,15 @@ class FileSystem(object):
             inode_id = self.create_file(file_name)
             inode = self.inode_table.get_inode(inode_id)
         bytes_to_write = len(data)
+        print "Will write {0} bytes to file {1}".format(bytes_to_write, file_name)
         #How much blocks we need to write the data
         required_blocks = int(math.ceil(float(bytes_to_write) / float(Settings.datablock_size)))
         if required_blocks > 15:
             raise ValueError("File is too big for the file system!")
         inode.i_size = bytes_to_write
-        index_bytes = 0
+        writen_bytes = 0
         index_block = 0
-        while index_bytes < bytes_to_write and index_block < required_blocks:
+        while writen_bytes < bytes_to_write and index_block < required_blocks:
             block = inode.i_blocks[index_block]
             if block == 0: #Means it has no block assigned
                 block_id, block_offset = self.cluster_table.get_free_cluster()
@@ -86,16 +93,17 @@ class FileSystem(object):
                 block_id = block
                 block_offset = Settings.datablock_region_offset + (block_id * Settings.datablock_size)
             self.file_object.seek(block_offset)
+            print "Writing data to block {0} with offset {1}".format(block_id, block_offset)
             if bytes_to_write > Settings.datablock_size:
-                _data = data[index_bytes:Settings.datablock_size + 1]
+                _data = data[writen_bytes:writen_bytes + Settings.datablock_size]
                 _data = struct.pack("={0}s".format(bytes_to_write), _data)
                 self.file_object.write(_data)
-                index_bytes += Settings.datablock_size
+                writen_bytes += Settings.datablock_size
                 index_block += 1
             else:
-                _data = struct.pack("{0}s".format(bytes_to_write), data[index_bytes:])
+                _data = struct.pack("{0}s".format(bytes_to_write), data[writen_bytes:])
                 self.file_object.write(_data)
-                index_bytes += bytes_to_write
+                writen_bytes += bytes_to_write
                 index_block += 1
                 break
         self.inode_table.write_inode(inode_id, inode)
@@ -103,6 +111,7 @@ class FileSystem(object):
     def list_files(self):
         "Reads the current directory and returns/prints the list of files."
         files = self.__get_files(self.__current_inode_id)
+        print "Files? {0}".format("| ".join(str(f) for f in files))
         files = sorted(files, key=lambda file: file.name)
         for item in files:
             inode = self.inode_table.get_inode(item.inode_id)
@@ -200,8 +209,8 @@ class FileSystem(object):
         '''
         Allocates a space of "size" bytes in the current file.
         '''
-        chunk = "a" * size
-        self.file_object.write(chunk)
+        _bytes = bytearray(size)
+        self.file_object.write(_bytes)
 
     def __allocate_bitmap(self, size):
         '''
@@ -232,58 +241,82 @@ class FileSystem(object):
         self.__root_inode.i_mode = 1
         self.inode_table.write_inode(0, self.__root_inode)
 
-    def __create_file(self, file_name, file_type):
+    def __create_file(self, file_name, file_type, parent_id=-1):
         '''
         Creates a new file and returns the assigned Inode ID.
         '''
-        parent_inode = self.inode_table.get_inode(self.__current_inode_id)
-        child_inode_id = self.inode_table.get_free_inode_index()
+        if parent_id == -1:
+            parent_id = self.__current_inode_id
+        free_inode_id, free_inode = self.inode_table.get_free_inode()
         #Add dir entry to parent folder
         dir_entry_size = self.__add_dir_entry(
-            file_name, child_inode_id, file_type, self.__current_inode_id)
+            file_name, free_inode_id, file_type, parent_id)
+        parent_inode = self.inode_table.get_inode(parent_id)
         parent_inode.i_size += dir_entry_size
         parent_inode.i_mdate = calendar.timegm(time.gmtime())
-        #Update inode in case it is being reused
-        child_inode = self.inode_table.get_inode(child_inode_id)
-        child_inode.i_ddate = 0
-        child_inode.i_cdate = calendar.timegm(time.gmtime())
-        child_inode.i_mode = file_type
-        child_inode.i_size = 0
+        #Clean inode for new file
+        free_inode.i_ddate = 0
+        free_inode.i_cdate = calendar.timegm(time.gmtime())
+        free_inode.i_mode = file_type
+        free_inode.i_size = 0
         free_cluster_id = self.cluster_table.get_free_cluster()[0]
-        child_inode.i_blocks = [free_cluster_id, 0, 0, 0, 0, 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0]
+        free_inode.i_blocks = [free_cluster_id, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.cluster_table.change_cluster_state(free_cluster_id, 0)
-        self.inode_table.write_inode(child_inode_id, child_inode)
-        self.inode_table.change_inode_state(child_inode_id, 0)
-        self.inode_table.write_inode(self.__current_inode_id, parent_inode)
-        return child_inode_id
+        self.inode_table.change_inode_state(free_inode_id, 0)
 
-    def __add_dir_entry(self, file_name, inode_id, file_type, parent_inode_id):
+        self.inode_table.write_inode(free_inode_id, free_inode)
+        self.inode_table.write_inode(parent_id, parent_inode)
+        return free_inode_id
+
+    def __add_dir_entry(self, file_name, inode_id, file_type, folder_inode_id=-1):
         '''
         Adds a new dir entry at the current directory and returns the dir entry size.
         file_type: 0 => regular file, 1 => directory file
         '''
-        parent_inode = self.inode_table.get_inode(parent_inode_id)
+        if Settings.DEBUG:
+            print "Adding file entry {0} at folder with id {1}".format(file_name, folder_inode_id)
+        if folder_inode_id == -1:
+            folder_inode_id = self.__current_inode_id
+        parent_inode = self.inode_table.get_inode(folder_inode_id)
         file_name_len = len(file_name)
         struct_mask = '=hhhh{0}s'.format(file_name_len)
         dir_entry_size = struct.calcsize(struct_mask)
         block_data = struct.pack(
             struct_mask, inode_id, dir_entry_size, file_name_len, file_type, file_name)
         #Get the index of the block to be used
-        blocks_used = float(parent_inode.i_size) / float(Settings.datablock_size)
+        blocks_used = int(float(parent_inode.i_size) / float(Settings.datablock_size))
         if blocks_used > 1:
-            data_offset = parent_inode.i_size - Settings.datablock_size * int(blocks_used)
+            data_offset = parent_inode.i_size - Settings.datablock_size * blocks_used
         else:
             data_offset = parent_inode.i_size
-        last_block_id = parent_inode.i_blocks[int(blocks_used)]
-        block_offset = self.get_cluster_offset(last_block_id)
-        data_offset = block_offset + data_offset
+
+        last_block_id = parent_inode.i_blocks[blocks_used]
+        if parent_inode.i_size == 0:
+            free_block_space = Settings.datablock_size
+        else:
+            free_block_space = (blocks_used + 1) * Settings.datablock_size - parent_inode.i_size
+        print "Current block has {0} of free space".format(free_block_space)
+        if dir_entry_size > free_block_space:
+            print "Will use a new block to allocate"
+            free_block_id, block_offset = self.cluster_table.get_free_cluster()
+            parent_inode.set_block(blocks_used + 1, free_block_id)
+            self.cluster_table.change_cluster_state(free_block_id, 0)
+            data_offset = block_offset
+        else:
+            block_offset = self.get_cluster_offset(last_block_id)
+            data_offset += block_offset
+
         self.file_object.seek(data_offset)
+        print "Writing dir entry of size {0} to offset {1}".format(dir_entry_size, data_offset)
         self.file_object.write(block_data)
+        if Settings.DEBUG:
+            print "Writing Inode [{0}]".format(str(parent_inode))
+        self.inode_table.write_inode(folder_inode_id, parent_inode)
         return dir_entry_size
 
     def __set_dir_entries(self, dir_entries):
         '''
-        Expects the list of dir_entries to be assigned to the current folder.
+        Recieves the list of dir_entries to be assigned to the current folder.
         '''
         try:
             inode = self.inode_table.get_inode(self.__current_inode_id)
@@ -296,7 +329,7 @@ class FileSystem(object):
         except ValueError:
             return False
 
-    def __get_files(self, dir_inode_id = 0):
+    def __get_files(self, dir_inode_id=0):
         '''
         Returns the files under the directory.
         '''
@@ -305,12 +338,27 @@ class FileSystem(object):
             self.__current_inode_id = dir_inode_id
         current_inode = self.inode_table.get_inode(self.__current_inode_id)
         files_list = list()
-        data_size = current_inode.i_size
-        bytes_readed = 0
-        block_offset = self.get_cluster_offset(current_inode.i_blocks[0])
+        blocks_used = float(current_inode.i_size) / float(Settings.datablock_size)
+        blocks_used = int(math.ceil(blocks_used))
+        for i in xrange(0, blocks_used):
+            if Settings.DEBUG:
+                print "reading block {0} from inode {1}".format(i, dir_inode_id)
+            block_index = current_inode.i_blocks[i]
+            entries = self.__read_block_dir_entries(block_index)
+            files_list += entries
+            if Settings.DEBUG:
+                print "| ".join(str(e) for e in entries)
+        self.__current_inode_id = backup_inode_id
+        return files_list
+
+    def __read_block_dir_entries(self, block):
+        "Returns the list of direntries in the block"
+        files_list = list()
+        block_offset = self.get_cluster_offset(block)
         self.file_object.seek(block_offset)
         entry_mask = "=hhhh"
-        while bytes_readed < data_size:
+        bytes_readed = 0
+        while bytes_readed < Settings.datablock_size:
             entry_size = struct.calcsize(entry_mask)
             inode_id, rec_len, name_len, file_type = struct.unpack(
                 entry_mask, self.file_object.read(entry_size))
@@ -318,9 +366,9 @@ class FileSystem(object):
             file_name = struct.unpack(
                 name_mask, self.file_object.read(name_len))[0]
             bytes_readed += struct.calcsize(entry_mask + name_mask[1:])
-            dir_entry = DirEntry(inode_id, rec_len, name_len, file_type, file_name)
-            files_list.append(dir_entry)
-        self.__current_inode_id = backup_inode_id
+            if rec_len != 0 and rec_len < 60:
+                dir_entry = DirEntry(inode_id, rec_len, name_len, file_type, file_name)
+                files_list.append(dir_entry)
         return files_list
 
     def remove_file(self, file_name):
@@ -335,9 +383,7 @@ class FileSystem(object):
                     self.cluster_table.change_cluster_state(block_id, 1)
                 inode.i_ddate = calendar.timegm(time.gmtime())
                 self.inode_table.write_inode(entry.inode_id, inode)
-                self.inode_table.change_inode_state(entry.inode_id, 1)
-                curdir_dir_entries.remove(entry)
-        self.__set_dir_entries(curdir_dir_entries)
+                #self.inode_table.change_inode_state(entry.inode_id, 1)
 
     def __remove_directory_rec(self, inode_id=0):
         '''
@@ -365,8 +411,7 @@ class FileSystem(object):
         for entry in curdir_dir_entries:
             if entry.name == dir_name:
                 self.__remove_directory_rec(entry.inode_id)
-                curdir_dir_entries.remove(entry)
-        self.__set_dir_entries(curdir_dir_entries)
+        #self.__set_dir_entries(curdir_dir_entries)
 
     def get_cluster_offset(self, block_id):
         '''
