@@ -119,7 +119,6 @@ class FileSystem(object):
         if inode_id == -1:
             inode_id = self.__current_inode_id 
         files = self.__get_files(inode_id)
-        print "Files? {0}".format("| ".join(str(f) for f in files))
         files = sorted(files, key=lambda file: file.name)
         for item in files:
             inode = self.inode_table.get_inode(item.inode_id)
@@ -129,6 +128,10 @@ class FileSystem(object):
                 print "{0}{1}".format(Fore.GREEN, item.name)
             else:
                 print "{0}{1}".format(Fore.BLUE, item.name)
+
+    def list_files_long_format(self):
+        "List the files using the long format"
+        raise ValueError("Not Implemented!")
 
     def create_file(self, file_name):
         '''
@@ -319,7 +322,7 @@ class FileSystem(object):
         self.inode_table.write_inode(folder_inode_id, parent_inode)
         return dir_entry_size
 
-    def __set_dir_entries(self, dir_entries):
+    """def __set_dir_entries(self, dir_entries):
         '''
         Recieves the list of dir_entries to be assigned to the current folder.
         '''
@@ -332,11 +335,11 @@ class FileSystem(object):
                 self.inode_table.write_inode(self.__current_inode_id, inode)
             return True
         except ValueError:
-            return False
+            return False"""
 
     def __get_files(self, dir_inode_id=0):
         '''
-        Returns the files under the directory.
+        Returns all the files under the directory, even the deleted ones.
         '''
         backup_inode_id = self.__current_inode_id
         if dir_inode_id > 0:
@@ -377,6 +380,7 @@ class FileSystem(object):
         return files_list
 
     def remove_file(self, file_name):
+        """ Removes the file in the current folder """
         #Current directory dir entries
         curdir_dir_entries = self.__get_files(self.__current_inode_id)
         for entry in curdir_dir_entries:

@@ -44,7 +44,10 @@ with open(file_path, "r+b") as fs_file:
         elif cmd[0] == "echo" and cmd[1] == ">":
             file_system.write_file(cmd[2], file_content)
         elif cmd[0] == "ls":
-            file_system.list_files()
+            if len(cmd) > 1 and cmd[1] == "-l":
+                file_system.list_files_long_format()
+            else:
+                file_system.list_files()
         elif cmd[0] == "mkdir":
             file_system.create_directory(cmd[1])
         elif cmd[0] == "rmdir":
