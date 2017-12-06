@@ -39,6 +39,7 @@ class FileSystem(object):
     def read_file(self, file_name):
         "Interface to read a file by name"
         is_file, inode_id = self.is_file(file_name)
+        print "reading file {0}, is file?: {1}".format(file_name, is_file)
         if is_file:
             inode = self.inode_table.get_inode(inode_id)
             inode.i_adate = calendar.timegm(time.gmtime())
@@ -66,9 +67,14 @@ class FileSystem(object):
 
     def write_file(self, file_name, data, append=False):
         '''
-        Write text to a file, overwriting it if it exists or crating it.
+        Write text to a file, overwriting it if it exists or creating it.
         '''
-        is_file, inode_id = self.is_file(file_name)
+        if not append:
+            inode_id = self.create_file(file_name)
+            is_file = True
+        else:
+            is_file, inode_id = self.is_file(file_name)
+
         if is_file:
             inode = self.inode_table.get_inode(inode_id)
         else:
@@ -108,9 +114,11 @@ class FileSystem(object):
                 break
         self.inode_table.write_inode(inode_id, inode)
 
-    def list_files(self):
+    def list_files(self, inode_id = -1):
         "Reads the current directory and returns/prints the list of files."
-        files = self.__get_files(self.__current_inode_id)
+        if inode_id == -1:
+            inode_id = self.__current_inode_id 
+        files = self.__get_files(inode_id)
         print "Files? {0}".format("| ".join(str(f) for f in files))
         files = sorted(files, key=lambda file: file.name)
         for item in files:
@@ -187,12 +195,9 @@ class FileSystem(object):
         '''
         files = self.__get_files(self.__current_inode_id)
         for item in files:
-            if item.name == file_name and item.file_type == 0:
-                f_inode = self.inode_table.get_inode(item.inode_id)
-                if f_inode.i_mode == 0 and f_inode.i_ddate == 0:
-                    return (True, item.inode_id)
-                else:
-                    return (False, -1)
+            item_inode = self.inode_table.get_inode(item.inode_id)
+            if item.name == file_name and item_inode.i_mode == 0 and item_inode.i_ddate == 0:
+                return (True, item.inode_id)
         return (False, -1)
 
     def _create_file_system(self):
