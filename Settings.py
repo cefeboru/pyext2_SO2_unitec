@@ -3,7 +3,7 @@ from InodeBase import Inode
 
 class Settings(object):
     inode_size = Inode.i_struct_size
-    datablock_size = 4096
+    datablock_size = 128
     datablock_max_elements = 65536
     datablock_bitmap_offset = 0
     inode_max_elements = 1024

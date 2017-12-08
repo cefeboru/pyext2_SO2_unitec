@@ -29,7 +29,7 @@ with open(file_path, "r+b") as fs_file:
     #file_system.create_file("4.txt")
     #file_system.create_file("5.txt")
     while True:
-        parameters = raw_input("{0}:$ ".format(file_system.working_dir))
+        parameters = raw_input("{0}\n$ ".format(file_system.working_dir))
         string_init = parameters.find('"') + 1
         string_end = parameters.find('"', string_init)
         file_content = parameters[string_init:string_end]
@@ -41,8 +41,11 @@ with open(file_path, "r+b") as fs_file:
             file_system.change_directory(cmd[1])
         elif cmd[0] == "cat":
             file_system.read_file(cmd[1])
-        elif cmd[0] == "echo" and cmd[1] == ">":
-            file_system.write_file(cmd[2], file_content)
+        elif cmd[0] == "echo":
+            if cmd[1] == ">":
+                file_system.write_file(cmd[2], file_content)
+            elif cmd[1] == ">>":
+                file_system.write_file(cmd[2], file_content, append=True)
         elif cmd[0] == "ls":
             if len(cmd) > 1 and cmd[1] == "-l":
                 file_system.list_files_long_format()
@@ -56,3 +59,6 @@ with open(file_path, "r+b") as fs_file:
             file_system.remove_file(cmd[1])
         elif cmd[0] == "exit": 
             break
+
+
+
