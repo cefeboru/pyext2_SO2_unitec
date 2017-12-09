@@ -4,8 +4,7 @@ Author: Cesar Bonilla
 Module to Handle the Ext2 File System
 '''
 import struct
-import calendar
-import time
+import datetime
 import math
 from colorama import init, Fore
 from bitarray import bitarray
@@ -13,7 +12,7 @@ from InodeBase import Inode
 from ClusterTable import ClusterTable
 from InodeTable import InodeTable
 from Settings import Settings
-from utilities import *
+from utilities import split_path_and_file, get_cluster_offset, get_current_time_seconds
 
 
 class FileSystem(object):
@@ -148,7 +147,30 @@ class FileSystem(object):
 
     def list_files_long_format(self):
         "List the files using the long format"
-        raise ValueError("Not Implemented!")
+        entries_all = self.__get_files(self.__current_inode_id)
+        entries_filtered = list()
+        for entry in entries_all:
+            inode = self.inode_table.get_inode(entry.inode_id)
+            if inode.i_ddate == 0:
+                entries_filtered.append(entry)
+        file_output = "{0}{1}{2}{3} 1 root root {size} {date} {name}"
+        for entry in entries_filtered:
+            inode = self.inode_table.get_inode(entry.inode_id)
+            owner_permissions = "rwx"
+            group_permission = "rwx"
+            all_permissions = "r--"
+            date = datetime.datetime.fromtimestamp(inode.i_mdate).strftime('%Y-%m-%d %H:%M:%S')    
+            if inode.i_mode == 0:
+                entry_type = "-"
+                size = inode.i_size    
+            elif inode.i_mode == 1:
+                entry_type = "d"
+                size = 0
+            elif inode.i_mode == 2:
+                entry_type = "l"
+                size = 0
+            print file_output.format(entry_type, owner_permissions, group_permission,
+                                     all_permissions, size=size, date=date, name=entry.name)
 
     def create_file(self, file_name):
         '''
