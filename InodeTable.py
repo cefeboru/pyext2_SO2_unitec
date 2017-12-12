@@ -1,10 +1,12 @@
 '''
 Author: Cesar Bonilla
-Module to handle all the Inode Table Operations
+Module to handle all the Inode Table Operations and Indirect Blocks
 '''
+import struct
 from InodeBase import Inode
 from Settings import Settings
 from bitarray import bitarray
+
 
 class InodeTable(object):
     "Inode Table API to perform Read & Write Operations"
@@ -73,3 +75,31 @@ class InodeTable(object):
             self.file_object.write(data.tobytes())
         except ValueError:
             raise ValueError("Unable to set inode as occupied or free")
+
+    def get_indirect_blocks(self, block_id):
+        'Returns the array block_ids stored in the block.'
+        indirect_block_offset = Settings.datablock_region_offset
+        indirect_block_offset += Settings.datablock_size * block_id
+        self.file_object.seek(indirect_block_offset)
+        binary_data = self.file_object.read(Settings.datablock_size)
+        print len(binary_data)
+        unpack_mask = '=' + 'i' * Settings.max_indirect_blocks
+        print unpack_mask
+        __blocks = struct.unpack(unpack_mask, binary_data)
+        blocks = []
+        for block in __blocks:
+            blocks.append(int(block))
+            print "indirect block {0}".format(block)
+        return blocks
+
+    def set_indirect_blocks(self, block_id, indirect_blocks):
+        'Writes the array of indirect blocks into the specified block.'
+        if block_id == 0:
+            return
+        indirect_block_offset = Settings.datablock_region_offset
+        indirect_block_offset += Settings.datablock_size * block_id
+        self.file_object.seek(indirect_block_offset)
+        data = ''
+        for indirect_block in indirect_blocks:
+            data += struct.pack('=i', indirect_block)
+        self.file_object.write(data)

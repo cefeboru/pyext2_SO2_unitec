@@ -56,13 +56,6 @@ class Inode(object):
         self.i_blocks[14] = unpacked_data[20]
         return self
 
-    def set_block(self, index, block):
-        "Assign a block to the inode"
-        if index <= 12:
-            self.i_blocks[index] = block
-        else:
-            raise ValueError("Bloques indirectos no implementados")
-
     def __str__(self):
         format_mask = '({0}, {1}, {2}, {3}, {4}, {5} ,{6} ,{7} ,{8}, {9} ,{10} ,{11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20})'
         return format_mask.format(self.i_mode, self.i_size, self.i_cdate, self.i_adate, self.i_mdate, self.i_ddate, 
